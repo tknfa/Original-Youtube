@@ -79,6 +79,13 @@ ytd-grid-video-renderer {
   object-fit: cover;
 }
 
+.classic-gif-slot video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 /* Hide Shorts, chips, and non-video shelves */
 ytd-reel-shelf-renderer,
 ytd-shorts-shelf-renderer,

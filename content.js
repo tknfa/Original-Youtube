@@ -59,7 +59,8 @@
     "ask for videos any way you like",
     "ask in your own words",
   ];
-  let gifListPromise = null;
+  let mediaListPromise = null;
+  const unsupportedMedia = new Set();
   const SUPPORTS_HAS = (() => {
     try {
       return CSS.supports("selector(:has(*))");
@@ -102,26 +103,118 @@
     }
   }
 
-  function getGifList() {
-    if (!gifListPromise) {
-      gifListPromise = fetch(
+  function getMediaList() {
+    if (!mediaListPromise) {
+      mediaListPromise = fetch(
         chrome.runtime.getURL("assets/gifs/manifest.json")
       )
         .then((response) => (response.ok ? response.json() : { gifs: [] }))
-        .then((data) => (Array.isArray(data.gifs) ? data.gifs : []))
+        .then((data) => {
+          const list = Array.isArray(data.media)
+            ? data.media
+            : Array.isArray(data.gifs)
+            ? data.gifs
+            : [];
+          return list;
+        })
         .catch(() => []);
     }
-    return gifListPromise;
+    return mediaListPromise;
   }
 
-  function pickRandomGif(gifs) {
-    if (!gifs || gifs.length === 0) return null;
-    const index = Math.floor(Math.random() * gifs.length);
-    return gifs[index];
+  function pickRandomMedia(mediaList) {
+    if (!mediaList || mediaList.length === 0) return null;
+    const index = Math.floor(Math.random() * mediaList.length);
+    return mediaList[index];
+  }
+
+  function isProbablyPlayable(fileName) {
+    const extension = (fileName.split(".").pop() || "").toLowerCase();
+    if (["gif", "png", "jpg", "jpeg", "webp"].includes(extension)) return true;
+    if (["mp4", "m4v", "webm", "ogg"].includes(extension)) {
+      const video = document.createElement("video");
+      const mime =
+        extension === "webm"
+          ? "video/webm"
+          : extension === "ogg"
+          ? "video/ogg"
+          : "video/mp4";
+      return video.canPlayType(mime) !== "";
+    }
+    return false;
+  }
+
+  function createMediaElement(mediaUrl, mediaFile, mediaList, container) {
+    const isVideo = /\.(mp4|m4v|webm|ogg)$/i.test(mediaUrl);
+    if (isVideo) {
+      const video = document.createElement("video");
+      video.src = mediaUrl;
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = "metadata";
+      video.setAttribute("aria-label", "Classic filler video");
+      video.addEventListener(
+        "canplay",
+        () => {
+          video.play().catch(() => {});
+        },
+        { once: true }
+      );
+      video.addEventListener(
+        "error",
+        () => {
+          unsupportedMedia.add(mediaFile);
+          renderMediaInContainer(container, mediaList);
+        },
+        { once: true }
+      );
+      return video;
+    }
+
+    const img = document.createElement("img");
+    img.src = mediaUrl;
+    img.alt = "Classic filler";
+    img.loading = "lazy";
+    return img;
+  }
+
+  function renderMediaInContainer(container, mediaList) {
+    if (!container || !container.isConnected) return;
+    const candidates = mediaList.filter(
+      (file) => !unsupportedMedia.has(file) && isProbablyPlayable(file)
+    );
+    if (candidates.length === 0) {
+      container.remove();
+      return;
+    }
+
+    const mediaFile = pickRandomMedia(candidates);
+    if (!mediaFile) {
+      container.remove();
+      return;
+    }
+
+    const mediaUrl = chrome.runtime.getURL(`assets/gifs/${mediaFile}`);
+    container.dataset.classicGifReplaced = "true";
+    container.innerHTML = "";
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "classic-gif-slot";
+
+    const mediaElement = createMediaElement(
+      mediaUrl,
+      mediaFile,
+      mediaList,
+      container
+    );
+    wrapper.appendChild(mediaElement);
+    container.appendChild(wrapper);
   }
 
   function replaceAdModulesWithGifs() {
-    return getGifList().then((gifs) => {
+    return getMediaList().then((mediaList) => {
       const adSelector = AD_REPLACE_SELECTORS.join(",");
       const adNodes = document.querySelectorAll(adSelector);
 
@@ -135,31 +228,12 @@
           return;
         }
 
-        if (!gifs || gifs.length === 0) {
+        if (!mediaList || mediaList.length === 0) {
           container.remove();
           return;
         }
 
-        const gifFile = pickRandomGif(gifs);
-        if (!gifFile) {
-          container.remove();
-          return;
-        }
-
-        const gifUrl = chrome.runtime.getURL(`assets/gifs/${gifFile}`);
-        container.dataset.classicGifReplaced = "true";
-        container.innerHTML = "";
-
-        const wrapper = document.createElement("div");
-        wrapper.className = "classic-gif-slot";
-
-        const img = document.createElement("img");
-        img.src = gifUrl;
-        img.alt = "Classic filler";
-        img.loading = "lazy";
-
-        wrapper.appendChild(img);
-        container.appendChild(wrapper);
+        renderMediaInContainer(container, mediaList);
       });
     });
   }
