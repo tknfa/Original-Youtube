@@ -1,4 +1,101 @@
 /*
   Classic YouTube Mode (2018-style)
-  TODO: Add layout and visibility rules to mimic the target look.
+  Always-on layout and visibility tweaks for a cleaner browse experience.
 */
+
+:root {
+  --classic-max-width: 1280px;
+  --classic-grid-gap: 16px;
+  --classic-title-size: 14px;
+  --classic-meta-size: 12px;
+}
+
+/* Keep the page bright and simple */
+ytd-app {
+  background: #ffffff;
+}
+
+/* Classic grid density */
+ytd-rich-grid-renderer {
+  max-width: var(--classic-max-width);
+  margin: 0 auto;
+  --ytd-rich-grid-items-per-row: 5;
+  --ytd-rich-grid-item-max-width: 260px;
+}
+
+@media (max-width: 1500px) {
+  ytd-rich-grid-renderer {
+    --ytd-rich-grid-items-per-row: 4;
+  }
+}
+
+@media (max-width: 1200px) {
+  ytd-rich-grid-renderer {
+    --ytd-rich-grid-items-per-row: 3;
+  }
+}
+
+@media (max-width: 900px) {
+  ytd-rich-grid-renderer {
+    --ytd-rich-grid-items-per-row: 2;
+  }
+}
+
+#contents.ytd-rich-grid-renderer {
+  column-gap: var(--classic-grid-gap);
+  row-gap: var(--classic-grid-gap);
+}
+
+ytd-rich-item-renderer,
+ytd-grid-video-renderer {
+  margin: 0 !important;
+}
+
+/* Typography closer to classic YouTube */
+#video-title {
+  font-size: var(--classic-title-size) !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+}
+
+#metadata-line {
+  font-size: var(--classic-meta-size) !important;
+  line-height: 1.2 !important;
+}
+
+/* Hide Shorts, chips, and non-video shelves */
+ytd-reel-shelf-renderer,
+ytd-shorts-shelf-renderer,
+ytd-rich-section-renderer[is-shorts],
+ytd-rich-section-renderer:has(ytd-reel-shelf-renderer),
+ytd-rich-section-renderer:has(ytd-shorts-shelf-renderer),
+ytd-rich-item-renderer:has(ytd-reel-item-renderer),
+ytd-post-renderer,
+ytd-rich-section-renderer:has(ytd-post-renderer),
+ytd-feed-filter-chip-bar-renderer,
+ytd-chip-cloud-renderer {
+  display: none !important;
+}
+
+/* Hide ad and promo UI elements */
+ytd-ad-slot-renderer,
+ytd-display-ad-renderer,
+ytd-in-feed-ad-layout-renderer,
+ytd-promoted-video-renderer,
+ytd-compact-promoted-video-renderer,
+ytd-promoted-sparkles-web-renderer,
+ytd-search-pyv-renderer,
+ytd-banner-promo-renderer,
+ytd-masthead-ad-renderer,
+ytd-action-companion-ad-renderer,
+ytd-companion-slot-renderer {
+  display: none !important;
+}
+
+/* Remove Shorts from the left nav */
+ytd-guide-entry-renderer:has(a[href^="/shorts"]),
+ytd-guide-entry-renderer a[href^="/shorts"],
+ytd-mini-guide-entry-renderer:has(a[href^="/shorts"]),
+ytd-mini-guide-entry-renderer a[href^="/shorts"] {
+  display: none !important;
+}
