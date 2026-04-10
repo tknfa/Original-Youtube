@@ -10,5 +10,11 @@
       "css": ["styles.css"],
       "run_at": "document_idle"
     }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/gifs/*", "assets/gifs/manifest.json"],
+      "matches": ["https://www.youtube.com/*"]
+    }
   ]
 }

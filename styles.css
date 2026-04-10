@@ -63,6 +63,22 @@ ytd-grid-video-renderer {
   line-height: 1.2 !important;
 }
 
+/* GIF fillers for removed ad slots */
+.classic-gif-slot {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0f0f0f;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.classic-gif-slot img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 /* Hide Shorts, chips, and non-video shelves */
 ytd-reel-shelf-renderer,
 ytd-shorts-shelf-renderer,

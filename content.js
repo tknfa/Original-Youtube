@@ -15,19 +15,6 @@
     // Community posts and non-video sections
     "ytd-post-renderer",
 
-    // Ad containers / promos
-    "ytd-ad-slot-renderer",
-    "ytd-display-ad-renderer",
-    "ytd-in-feed-ad-layout-renderer",
-    "ytd-promoted-video-renderer",
-    "ytd-compact-promoted-video-renderer",
-    "ytd-promoted-sparkles-web-renderer",
-    "ytd-search-pyv-renderer",
-    "ytd-banner-promo-renderer",
-    "ytd-masthead-ad-renderer",
-    "ytd-action-companion-ad-renderer",
-    "ytd-companion-slot-renderer",
-
     // Playables
     "ytd-playable-card-renderer",
     "ytd-game-card-renderer",
@@ -35,6 +22,23 @@
     // Ask for videos (beta prompt module)
     "ytd-feed-nudge-renderer",
     "ytd-text-prompt-renderer",
+  ];
+
+  const AD_REPLACE_SELECTORS = [
+    "ytd-ad-slot-renderer",
+    "ytd-display-ad-renderer",
+    "ytd-in-feed-ad-layout-renderer",
+    "ytd-promoted-video-renderer",
+    "ytd-compact-promoted-video-renderer",
+    "ytd-promoted-sparkles-web-renderer",
+    "ytd-search-pyv-renderer",
+  ];
+
+  const AD_REMOVE_SELECTORS = [
+    "ytd-banner-promo-renderer",
+    "ytd-masthead-ad-renderer",
+    "ytd-action-companion-ad-renderer",
+    "ytd-companion-slot-renderer",
   ];
 
   const HAS_SELECTORS = [
@@ -55,6 +59,7 @@
     "ask for videos any way you like",
     "ask in your own words",
   ];
+  let gifListPromise = null;
   const SUPPORTS_HAS = (() => {
     try {
       return CSS.supports("selector(:has(*))");
@@ -78,6 +83,14 @@
       }
     });
 
+    AD_REMOVE_SELECTORS.forEach((selector) => {
+      try {
+        document.querySelectorAll(selector).forEach((el) => el.remove());
+      } catch (error) {
+        // Skip invalid selector on older engines.
+      }
+    });
+
     if (SUPPORTS_HAS) {
       HAS_SELECTORS.forEach((selector) => {
         try {
@@ -87,6 +100,68 @@
         }
       });
     }
+  }
+
+  function getGifList() {
+    if (!gifListPromise) {
+      gifListPromise = fetch(
+        chrome.runtime.getURL("assets/gifs/manifest.json")
+      )
+        .then((response) => (response.ok ? response.json() : { gifs: [] }))
+        .then((data) => (Array.isArray(data.gifs) ? data.gifs : []))
+        .catch(() => []);
+    }
+    return gifListPromise;
+  }
+
+  function pickRandomGif(gifs) {
+    if (!gifs || gifs.length === 0) return null;
+    const index = Math.floor(Math.random() * gifs.length);
+    return gifs[index];
+  }
+
+  function replaceAdModulesWithGifs() {
+    return getGifList().then((gifs) => {
+      const adSelector = AD_REPLACE_SELECTORS.join(",");
+      const adNodes = document.querySelectorAll(adSelector);
+
+      adNodes.forEach((adNode) => {
+        const container =
+          adNode.closest(
+            "ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-playlist-renderer"
+          ) || adNode;
+
+        if (!container || container.dataset.classicGifReplaced === "true") {
+          return;
+        }
+
+        if (!gifs || gifs.length === 0) {
+          container.remove();
+          return;
+        }
+
+        const gifFile = pickRandomGif(gifs);
+        if (!gifFile) {
+          container.remove();
+          return;
+        }
+
+        const gifUrl = chrome.runtime.getURL(`assets/gifs/${gifFile}`);
+        container.dataset.classicGifReplaced = "true";
+        container.innerHTML = "";
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "classic-gif-slot";
+
+        const img = document.createElement("img");
+        img.src = gifUrl;
+        img.alt = "Classic filler";
+        img.loading = "lazy";
+
+        wrapper.appendChild(img);
+        container.appendChild(wrapper);
+      });
+    });
   }
 
   function removeShelvesByTitle() {
@@ -165,6 +240,7 @@
 
   function applyClassicMode() {
     removeBySelectors();
+    replaceAdModulesWithGifs();
     removeShelvesByTitle();
     removeAskForVideosModule();
     removeShortsNavEntries();
