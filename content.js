@@ -31,6 +31,10 @@
     // Playables
     "ytd-playable-card-renderer",
     "ytd-game-card-renderer",
+
+    // Ask for videos (beta prompt module)
+    "ytd-feed-nudge-renderer",
+    "ytd-text-prompt-renderer",
   ];
 
   const HAS_SELECTORS = [
@@ -45,7 +49,12 @@
     "shorts",
     "youtube playables",
     "playables",
+    "ask for videos any way you like",
   ]);
+  const BANNED_SECTION_TEXT = [
+    "ask for videos any way you like",
+    "ask in your own words",
+  ];
   const SUPPORTS_HAS = (() => {
     try {
       return CSS.supports("selector(:has(*))");
@@ -100,6 +109,30 @@
     });
   }
 
+  function removeAskForVideosModule() {
+    // Remove by placeholder or text snippets unique to the module.
+    document
+      .querySelectorAll('input[placeholder*="Ask in your own words"]')
+      .forEach((input) => {
+        const container = input.closest(
+          "ytd-rich-section-renderer, ytd-item-section-renderer, ytd-rich-shelf-renderer, ytd-shelf-renderer, ytd-rich-item-renderer"
+        );
+        if (container) container.remove();
+      });
+
+    // Remove by scanning visible text within likely modules.
+    const candidates = document.querySelectorAll(
+      "ytd-rich-section-renderer, ytd-item-section-renderer, ytd-rich-shelf-renderer, ytd-shelf-renderer, ytd-rich-item-renderer, ytd-horizontal-card-list-renderer, ytd-feed-nudge-renderer"
+    );
+
+    candidates.forEach((el) => {
+      const text = (el.textContent || "").toLowerCase();
+      const matches = BANNED_SECTION_TEXT.some((phrase) => text.includes(phrase));
+      if (!matches) return;
+      el.remove();
+    });
+  }
+
   function removeShortsNavEntries() {
     document
       .querySelectorAll(
@@ -133,6 +166,7 @@
   function applyClassicMode() {
     removeBySelectors();
     removeShelvesByTitle();
+    removeAskForVideosModule();
     removeShortsNavEntries();
     removeSponsoredByBadges();
   }
