@@ -27,6 +27,10 @@
     "ytd-masthead-ad-renderer",
     "ytd-action-companion-ad-renderer",
     "ytd-companion-slot-renderer",
+
+    // Playables
+    "ytd-playable-card-renderer",
+    "ytd-game-card-renderer",
   ];
 
   const HAS_SELECTORS = [
@@ -37,6 +41,11 @@
   ];
 
   const SPONSORED_BADGE_REGEX = /\b(sponsored|promotion|promoted|ad|ads)\b/i;
+  const BANNED_SECTION_TITLES = new Set([
+    "shorts",
+    "youtube playables",
+    "playables",
+  ]);
   const SUPPORTS_HAS = (() => {
     try {
       return CSS.supports("selector(:has(*))");
@@ -71,18 +80,20 @@
     }
   }
 
-  function removeShortsShelvesByText() {
+  function removeShelvesByTitle() {
     const candidates = document.querySelectorAll(
-      "ytd-rich-section-renderer, ytd-reel-shelf-renderer, ytd-rich-shelf-renderer, ytd-shelf-renderer"
+      "ytd-rich-section-renderer, ytd-reel-shelf-renderer, ytd-rich-shelf-renderer, ytd-shelf-renderer, ytd-item-section-renderer"
     );
 
     candidates.forEach((el) => {
       const title =
+        el.querySelector("#title-container #title") ||
         el.querySelector("#title") ||
         el.querySelector("#title-text") ||
+        el.querySelector("h3") ||
         el.querySelector("yt-formatted-string");
       const text = (title?.textContent || "").trim().toLowerCase();
-      if (text !== "shorts") return;
+      if (!BANNED_SECTION_TITLES.has(text)) return;
 
       const container = el.closest("ytd-rich-section-renderer") || el;
       container.remove();
@@ -121,7 +132,7 @@
 
   function applyClassicMode() {
     removeBySelectors();
-    removeShortsShelvesByText();
+    removeShelvesByTitle();
     removeShortsNavEntries();
     removeSponsoredByBadges();
   }

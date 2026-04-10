@@ -77,6 +77,12 @@ ytd-chip-cloud-renderer {
   display: none !important;
 }
 
+/* Hide Playables cards if they render outside a shelf */
+ytd-playable-card-renderer,
+ytd-game-card-renderer {
+  display: none !important;
+}
+
 /* Hide ad and promo UI elements */
 ytd-ad-slot-renderer,
 ytd-display-ad-renderer,
