@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Classic YouTube Mode",
+  "version": "0.1.0",
+  "description": "Restore a cleaner, classic YouTube browse experience (2018-style).",
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
