@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Classic YouTube Mode Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <h1>Classic YouTube Mode</h1>
+      <p class="subtitle">Theme preference</p>
+
+      <div class="option-group" role="radiogroup" aria-label="Theme">
+        <label class="option">
+          <input type="radio" name="theme" value="light" />
+          <span>Light (classic)</span>
+        </label>
+        <label class="option">
+          <input type="radio" name="theme" value="dark" />
+          <span>Dark</span>
+        </label>
+      </div>
+
+      <p class="hint">
+        Changes apply on the next YouTube refresh (or immediately if the page is
+        open).
+      </p>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

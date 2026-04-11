@@ -58,8 +58,14 @@
   const BANNED_SECTION_TEXT = [
     "ask for videos any way you like",
     "ask in your own words",
+    "youtube featured",
   ];
-  let mediaListPromise = null;
+  const FEATURED_PROMO_TEXT = [
+    "youtube featured",
+    "dress for the fest",
+  ];
+  const DEFAULT_THEME = "light";
+  let mediaManifestPromise = null;
   const unsupportedMedia = new Set();
   const SUPPORTS_HAS = (() => {
     try {
@@ -68,6 +74,41 @@
       return false;
     }
   })();
+
+  function getClassicBlue() {
+    const value = getComputedStyle(document.documentElement)
+      .getPropertyValue("--classic-link-active")
+      .trim();
+    return value || "#065fd4";
+  }
+
+  function getHomeBrowse() {
+    return (
+      document.querySelector('ytd-browse[page-subtype="home"]') ||
+      document.querySelector('ytd-browse[page-subtype="feed"]')
+    );
+  }
+
+  function applyTheme(theme) {
+    const normalized = theme === "dark" ? "dark" : "light";
+    document.documentElement.setAttribute("data-classic-theme", normalized);
+    if (state.initialized) {
+      scheduleApply();
+    }
+  }
+
+  function initTheme() {
+    chrome.storage.sync.get({ classicTheme: DEFAULT_THEME }, (data) => {
+      applyTheme(data.classicTheme || DEFAULT_THEME);
+    });
+
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "sync") return;
+      if (changes.classicTheme) {
+        applyTheme(changes.classicTheme.newValue || DEFAULT_THEME);
+      }
+    });
+  }
 
   function removeBySelectors() {
     REMOVE_SELECTORS.forEach((selector) => {
@@ -103,23 +144,32 @@
     }
   }
 
-  function getMediaList() {
-    if (!mediaListPromise) {
-      mediaListPromise = fetch(
+  function getMediaManifest() {
+    if (!mediaManifestPromise) {
+      mediaManifestPromise = fetch(
         chrome.runtime.getURL("assets/gifs/manifest.json")
       )
-        .then((response) => (response.ok ? response.json() : { gifs: [] }))
-        .then((data) => {
-          const list = Array.isArray(data.media)
-            ? data.media
-            : Array.isArray(data.gifs)
-            ? data.gifs
-            : [];
-          return list;
-        })
-        .catch(() => []);
+        .then((response) => (response.ok ? response.json() : {}))
+        .catch(() => ({}));
     }
-    return mediaListPromise;
+    return mediaManifestPromise;
+  }
+
+  function getMediaList() {
+    return getMediaManifest().then((data) => {
+      const list = Array.isArray(data.media)
+        ? data.media
+        : Array.isArray(data.gifs)
+        ? data.gifs
+        : [];
+      return list;
+    });
+  }
+
+  function getLogoFile() {
+    return getMediaManifest().then((data) =>
+      typeof data.logo === "string" ? data.logo : null
+    );
   }
 
   function pickRandomMedia(mediaList) {
@@ -238,6 +288,33 @@
     });
   }
 
+  function forceBlueText() {
+    const blue = getClassicBlue();
+    const hostSelector =
+      "ytd-rich-grid-media, ytd-rich-grid-slim-media, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer";
+    const textSelector =
+      "#video-title, #video-title-link, #metadata-line, #byline, #meta, yt-formatted-string";
+
+    document.querySelectorAll(hostSelector).forEach((host) => {
+      host.style.setProperty("--yt-spec-text-primary", blue, "important");
+      host.style.setProperty("--yt-spec-text-secondary", blue, "important");
+      host.style.setProperty("--yt-endpoint-color", blue, "important");
+      host.style.setProperty("--yt-endpoint-visited-color", blue, "important");
+      host.style.setProperty("--yt-spec-link-primary", blue, "important");
+      host.style.setProperty("color", blue, "important");
+
+      host.querySelectorAll(textSelector).forEach((el) => {
+        el.style.setProperty("color", blue, "important");
+      });
+
+      if (host.shadowRoot) {
+        host.shadowRoot.querySelectorAll(textSelector).forEach((el) => {
+          el.style.setProperty("color", blue, "important");
+        });
+      }
+    });
+  }
+
   function removeShelvesByTitle() {
     const candidates = document.querySelectorAll(
       "ytd-rich-section-renderer, ytd-reel-shelf-renderer, ytd-rich-shelf-renderer, ytd-shelf-renderer, ytd-item-section-renderer"
@@ -282,6 +359,240 @@
     });
   }
 
+  function ensureRecommendedBar() {
+    const browse = getHomeBrowse();
+    if (!browse) return;
+
+    const grid = browse.querySelector("ytd-rich-grid-renderer");
+    if (!grid) return;
+    const contents = grid.querySelector("#contents");
+    if (!contents) return;
+
+    let bar = grid.querySelector(":scope > .classic-recommended-bar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.className = "classic-recommended-bar";
+      bar.textContent = "Recommended";
+      grid.insertBefore(bar, contents);
+    }
+
+    bar.textContent = "Recommended";
+    bar.style.setProperty("display", "flex", "important");
+    bar.style.setProperty("align-items", "center", "important");
+    bar.style.setProperty("height", "42px", "important");
+    bar.style.setProperty("padding", "0 16px", "important");
+    bar.style.setProperty("margin", "0 0 16px", "important");
+    bar.style.setProperty("font-family", "Arial, Helvetica, sans-serif", "important");
+    bar.style.setProperty("font-size", "14px", "important");
+    bar.style.setProperty("font-weight", "700", "important");
+    bar.style.setProperty("border", "1px solid #d8d8d8", "important");
+    bar.style.setProperty("box-sizing", "border-box", "important");
+    bar.style.setProperty(
+      "background",
+      document.documentElement.getAttribute("data-classic-theme") === "dark"
+        ? "#111111"
+        : "#ffffff",
+      "important"
+    );
+    bar.style.setProperty(
+      "color",
+      document.documentElement.getAttribute("data-classic-theme") === "dark"
+        ? "#ffffff"
+        : "#111111",
+      "important"
+    );
+  }
+
+  function removeRichGridHeaderBar() {
+    const grid = document.querySelector("ytd-rich-grid-renderer");
+    if (!grid) return;
+
+    const header =
+      grid.querySelector("#header") || grid.querySelector("#header-container");
+    if (header) header.remove();
+  }
+
+  function pruneHomeGridChrome() {
+    const browse = getHomeBrowse();
+    if (!browse) return;
+
+    const grid = browse.querySelector("ytd-rich-grid-renderer");
+    if (!grid) return;
+
+    [...grid.children].forEach((child) => {
+      if (
+        child.id === "contents" ||
+        child.classList.contains("classic-recommended-bar")
+      ) {
+        return;
+      }
+
+      child.remove();
+    });
+  }
+
+  function stripLeadingHomeSections() {
+    const browse = getHomeBrowse();
+    if (!browse) return;
+
+    const contents = browse.querySelector("ytd-rich-grid-renderer #contents");
+    if (!contents) return;
+
+    const children = [...contents.children];
+
+    for (const child of children) {
+      const isVideoRow =
+        child.matches("ytd-rich-item-renderer, ytd-rich-grid-row") ||
+        Boolean(
+          child.querySelector(
+            "ytd-rich-item-renderer, ytd-rich-grid-media, ytd-rich-grid-slim-media"
+          )
+        );
+
+      if (isVideoRow) {
+        break;
+      }
+
+      child.remove();
+    }
+  }
+
+  function removeFeaturedPopups() {
+    const candidates = document.querySelectorAll(
+      [
+        "ytd-rich-section-renderer",
+        "ytd-rich-item-renderer",
+        "ytd-rich-shelf-renderer",
+        "ytd-item-section-renderer",
+        "ytd-banner-promo-renderer",
+        "ytd-feed-nudge-renderer",
+        "ytd-statement-banner-renderer",
+        "ytd-brand-video-singleton-renderer",
+        "ytd-brand-video-shelf-renderer",
+      ].join(", ")
+    );
+
+    candidates.forEach((candidate) => {
+      const text = (candidate.textContent || "").toLowerCase();
+      if (!FEATURED_PROMO_TEXT.some((phrase) => text.includes(phrase))) {
+        return;
+      }
+
+      candidate.remove();
+    });
+
+    document
+      .querySelectorAll("yt-formatted-string, span, a, button")
+      .forEach((node) => {
+        const text = (node.textContent || "").trim().toLowerCase();
+        if (!FEATURED_PROMO_TEXT.some((phrase) => text.includes(phrase))) {
+          return;
+        }
+
+        const container = node.closest(
+          [
+            "ytd-rich-section-renderer",
+            "ytd-rich-item-renderer",
+            "ytd-rich-shelf-renderer",
+            "ytd-item-section-renderer",
+            "ytd-banner-promo-renderer",
+            "ytd-feed-nudge-renderer",
+            "ytd-statement-banner-renderer",
+            "ytd-brand-video-singleton-renderer",
+            "ytd-brand-video-shelf-renderer",
+            "#dismissible",
+          ].join(", ")
+        );
+
+        if (container) {
+          container.remove();
+        }
+      });
+  }
+
+  function ensureClassicLogo() {
+    const logoLink = document.querySelector("ytd-topbar-logo-renderer a#logo");
+    if (!logoLink) return;
+    const hasCustomLogo = logoLink.querySelector(".classic-logo-image, .classic-logo");
+    const customChildCount = [...logoLink.children].filter(
+      (child) =>
+        child.classList.contains("classic-logo-image") ||
+        child.classList.contains("classic-logo")
+    ).length;
+    const hasOnlyCustomLogo =
+      hasCustomLogo &&
+      [...logoLink.children].every((child) =>
+        child.classList.contains("classic-logo-image") ||
+        child.classList.contains("classic-logo")
+      );
+
+    if (
+      logoLink.dataset.classicLogoApplied === "true" &&
+      hasOnlyCustomLogo &&
+      customChildCount === 1
+    ) {
+      return;
+    }
+
+    if (logoLink.dataset.classicLogoPending === "true") {
+      return;
+    }
+
+    logoLink.dataset.classicLogoApplied = "true";
+    logoLink.dataset.classicLogoPending = "true";
+    logoLink.replaceChildren();
+
+    getLogoFile().then((logoFile) => {
+      if (!logoLink.isConnected) {
+        return;
+      }
+
+      if (logoFile) {
+        const logoUrl = chrome.runtime.getURL(`assets/gifs/${logoFile}`);
+        const img = document.createElement("img");
+        img.className = "classic-logo-image";
+        img.alt = "YouTube";
+        img.addEventListener(
+          "load",
+          () => {
+            logoLink.dataset.classicLogoPending = "false";
+          },
+          { once: true }
+        );
+        img.addEventListener(
+          "error",
+          () => {
+            img.remove();
+            logoLink.dataset.classicLogoPending = "false";
+            injectTextLogo(logoLink);
+          },
+          { once: true }
+        );
+        img.src = logoUrl;
+        logoLink.replaceChildren(img);
+        return;
+      }
+
+      logoLink.dataset.classicLogoPending = "false";
+      injectTextLogo(logoLink);
+    });
+  }
+
+  function injectTextLogo(logoLink) {
+    if (!logoLink || logoLink.querySelector(".classic-logo")) return;
+    const classic = document.createElement("span");
+    classic.className = "classic-logo";
+    const you = document.createElement("span");
+    you.className = "classic-logo-you";
+    you.textContent = "You";
+    const tube = document.createElement("span");
+    tube.className = "classic-logo-tube";
+    tube.textContent = "Tube";
+    classic.appendChild(you);
+    classic.appendChild(tube);
+    logoLink.appendChild(classic);
+  }
+
   function removeShortsNavEntries() {
     document
       .querySelectorAll(
@@ -315,6 +626,13 @@
   function applyClassicMode() {
     removeBySelectors();
     replaceAdModulesWithGifs();
+    removeFeaturedPopups();
+    removeRichGridHeaderBar();
+    ensureRecommendedBar();
+    pruneHomeGridChrome();
+    stripLeadingHomeSections();
+    ensureClassicLogo();
+    forceBlueText();
     removeShelvesByTitle();
     removeAskForVideosModule();
     removeShortsNavEntries();
@@ -335,6 +653,7 @@
     if (state.initialized) return;
     state.initialized = true;
 
+    initTheme();
     scheduleApply();
 
     state.observer = new MutationObserver(scheduleApply);

@@ -6,13 +6,62 @@
 :root {
   --classic-max-width: 1280px;
   --classic-grid-gap: 16px;
-  --classic-title-size: 14px;
+  --classic-title-size: 13px;
   --classic-meta-size: 12px;
+  --classic-link: #065fd4;
+  --classic-link-dark: #3ea6ff;
 }
 
-/* Keep the page bright and simple */
+html[data-classic-theme="light"] {
+  --classic-bg: #f1f1f1;
+  --classic-surface: #ffffff;
+  --classic-text: #0f0f0f;
+  --classic-muted: #606060;
+  --classic-border: #e0e0e0;
+  --classic-link-active: var(--classic-link);
+}
+
+html[data-classic-theme="dark"] {
+  --classic-bg: #181818;
+  --classic-surface: #212121;
+  --classic-text: #f1f1f1;
+  --classic-muted: #aaaaaa;
+  --classic-border: #2f2f2f;
+  --classic-link-active: var(--classic-link-dark);
+}
+
+html:not([data-classic-theme]) {
+  --classic-bg: #f1f1f1;
+  --classic-surface: #ffffff;
+  --classic-text: #0f0f0f;
+  --classic-muted: #606060;
+  --classic-border: #e0e0e0;
+  --classic-link-active: var(--classic-link);
+}
+
+/* Keep the page simple */
+body,
 ytd-app {
-  background: #ffffff;
+  background: var(--classic-bg) !important;
+  color: var(--classic-text) !important;
+}
+
+#masthead-container,
+ytd-masthead {
+  background: var(--classic-surface) !important;
+  border-bottom: 1px solid var(--classic-border) !important;
+}
+
+ytd-guide-renderer,
+ytd-mini-guide-renderer {
+  background: var(--classic-surface) !important;
+}
+
+/* Make thumbnails more classic (sharper edges) */
+ytd-thumbnail #thumbnail,
+ytd-thumbnail-overlay-time-status-renderer,
+ytd-thumbnail {
+  border-radius: 2px !important;
 }
 
 /* Classic grid density */
@@ -51,6 +100,147 @@ ytd-grid-video-renderer {
   margin: 0 !important;
 }
 
+/* Classic "Recommended" bar */
+.classic-recommended-bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 40px;
+  padding: 0 16px;
+  margin: 12px 0 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid var(--classic-border);
+  background: var(--classic-surface);
+  color: var(--classic-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+html[data-classic-theme="light"] .classic-recommended-bar,
+html:not([data-classic-theme]) .classic-recommended-bar {
+  background: #ffffff !important;
+  color: #111111 !important;
+}
+
+html[data-classic-theme="dark"] .classic-recommended-bar {
+  background: #111111 !important;
+  color: #ffffff !important;
+}
+
+/* GLOBAL OVERRIDE (trial): force all text to classic blue */
+html[data-classic-theme] body,
+html[data-classic-theme] body * {
+  color: var(--classic-link-active) !important;
+}
+
+/* Remove leftover chip bar wrapper spacing */
+#chips-wrapper,
+ytd-feed-filter-chip-bar-renderer,
+ytd-chip-cloud-renderer {
+  display: none !important;
+}
+
+/* Hide rich grid header bars that render as black strips */
+ytd-rich-grid-renderer #header,
+ytd-rich-grid-renderer #header-container {
+  display: none !important;
+}
+
+ytd-browse[page-subtype="home"] ytd-rich-grid-renderer > :not(#contents):not(.classic-recommended-bar),
+ytd-browse[page-subtype="feed"] ytd-rich-grid-renderer > :not(#contents):not(.classic-recommended-bar) {
+  display: none !important;
+}
+
+ytd-browse[page-subtype="home"] ytd-rich-grid-renderer #contents > ytd-rich-section-renderer,
+ytd-browse[page-subtype="home"] ytd-rich-grid-renderer #contents > ytd-rich-shelf-renderer,
+ytd-browse[page-subtype="home"] ytd-rich-grid-renderer #contents > ytd-banner-promo-renderer,
+ytd-browse[page-subtype="home"] ytd-rich-grid-renderer #contents > ytd-feed-nudge-renderer,
+ytd-browse[page-subtype="home"] ytd-rich-grid-renderer #contents > ytd-statement-banner-renderer,
+ytd-browse[page-subtype="feed"] ytd-rich-grid-renderer #contents > ytd-rich-section-renderer,
+ytd-browse[page-subtype="feed"] ytd-rich-grid-renderer #contents > ytd-rich-shelf-renderer,
+ytd-browse[page-subtype="feed"] ytd-rich-grid-renderer #contents > ytd-banner-promo-renderer,
+ytd-browse[page-subtype="feed"] ytd-rich-grid-renderer #contents > ytd-feed-nudge-renderer,
+ytd-browse[page-subtype="feed"] ytd-rich-grid-renderer #contents > ytd-statement-banner-renderer {
+  display: none !important;
+}
+
+/* Classic YouTube logo */
+ytd-topbar-logo-renderer #logo-icon,
+ytd-topbar-logo-renderer #logo-icon-container,
+ytd-topbar-logo-renderer svg {
+  display: none !important;
+}
+
+ytd-topbar-logo-renderer a#logo {
+  display: flex !important;
+  align-items: center;
+  gap: 4px;
+}
+
+.classic-logo-image {
+  height: 30px;
+  width: auto;
+  display: block;
+}
+
+.classic-logo {
+  display: inline-flex;
+  align-items: center;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+  color: #333333;
+}
+
+.classic-logo-you {
+  color: #333333;
+}
+
+.classic-logo-tube {
+  color: #ffffff;
+  background: linear-gradient(180deg, #ff4c4c 0%, #c80000 100%);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 4px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* Watch page layout (more classic) */
+ytd-watch-flexy {
+  --ytd-watch-flexy-sidebar-width: 360px;
+}
+
+#columns.ytd-watch-flexy {
+  max-width: 1280px !important;
+  margin: 0 auto !important;
+  padding: 16px 24px 0 !important;
+}
+
+#primary.ytd-watch-flexy {
+  margin-right: 24px !important;
+}
+
+#secondary.ytd-watch-flexy {
+  min-width: 320px !important;
+}
+
+#primary-inner.ytd-watch-flexy,
+#secondary-inner.ytd-watch-flexy {
+  background: var(--classic-surface) !important;
+  border: 1px solid var(--classic-border) !important;
+  border-radius: 2px !important;
+  padding: 12px !important;
+}
+
+#comments {
+  background: var(--classic-surface) !important;
+  border: 1px solid var(--classic-border) !important;
+  border-radius: 2px !important;
+  padding: 12px !important;
+}
+
 /* Typography closer to classic YouTube */
 #video-title {
   font-size: var(--classic-title-size) !important;
@@ -61,6 +251,115 @@ ytd-grid-video-renderer {
 #metadata-line {
   font-size: var(--classic-meta-size) !important;
   line-height: 1.2 !important;
+}
+
+/* Classic blue text below videos (titles + channel + metadata) */
+ytd-rich-grid-media #video-title,
+ytd-rich-grid-media #video-title-link,
+ytd-rich-grid-media a#video-title,
+ytd-rich-grid-media a#video-title-link,
+ytd-rich-grid-media yt-formatted-string#video-title,
+ytd-rich-grid-media h3 a#video-title,
+ytd-rich-grid-slim-media #video-title,
+ytd-rich-grid-slim-media #video-title-link,
+ytd-rich-grid-slim-media a#video-title,
+ytd-rich-grid-slim-media a#video-title-link,
+ytd-rich-grid-slim-media yt-formatted-string#video-title,
+ytd-rich-grid-slim-media h3 a#video-title,
+ytd-video-renderer #video-title,
+ytd-video-renderer #video-title-link,
+ytd-video-renderer a#video-title,
+ytd-video-renderer a#video-title-link,
+ytd-grid-video-renderer #video-title,
+ytd-grid-video-renderer #video-title-link,
+ytd-grid-video-renderer a#video-title,
+ytd-grid-video-renderer a#video-title-link,
+ytd-compact-video-renderer #video-title,
+ytd-compact-video-renderer #video-title-link,
+ytd-compact-video-renderer a#video-title,
+ytd-compact-video-renderer a#video-title-link,
+a#video-title,
+a#video-title-link,
+#metadata a,
+ytd-video-meta-block a,
+ytd-video-meta-block #video-title {
+  color: var(--classic-link-active) !important;
+}
+
+/* Force blue for all metadata text under video cards */
+ytd-rich-grid-media #meta,
+ytd-rich-grid-media #meta *,
+ytd-rich-grid-slim-media #meta,
+ytd-rich-grid-slim-media #meta *,
+ytd-video-renderer #meta,
+ytd-video-renderer #meta *,
+ytd-grid-video-renderer #meta,
+ytd-grid-video-renderer #meta *,
+ytd-compact-video-renderer #meta,
+ytd-compact-video-renderer #meta *,
+ytd-video-meta-block,
+ytd-video-meta-block *,
+#metadata,
+#metadata * {
+  color: var(--classic-link-active) !important;
+}
+
+/* Override YouTube shadow DOM text colors for card metadata */
+ytd-rich-grid-media,
+ytd-rich-grid-slim-media,
+ytd-video-renderer,
+ytd-grid-video-renderer,
+ytd-compact-video-renderer {
+  --yt-spec-text-primary: var(--classic-link-active) !important;
+  --yt-spec-text-secondary: var(--classic-link-active) !important;
+  --yt-endpoint-color: var(--classic-link-active) !important;
+  --yt-endpoint-visited-color: var(--classic-link-active) !important;
+  --yt-spec-call-to-action: var(--classic-link-active) !important;
+  --yt-spec-link-primary: var(--classic-link-active) !important;
+  color: var(--classic-link-active) !important;
+}
+
+/* Ensure containers feeding rich grid inherit blue text */
+ytd-rich-item-renderer,
+ytd-rich-grid-row,
+ytd-rich-grid-renderer {
+  --yt-spec-text-primary: var(--classic-link-active) !important;
+  --yt-spec-text-secondary: var(--classic-link-active) !important;
+  --yt-endpoint-color: var(--classic-link-active) !important;
+  --yt-endpoint-visited-color: var(--classic-link-active) !important;
+  --yt-spec-link-primary: var(--classic-link-active) !important;
+}
+
+/* Hard override for metadata blocks that still render white */
+ytd-rich-grid-media #details,
+ytd-rich-grid-media #details *,
+ytd-rich-grid-media #metadata-line,
+ytd-rich-grid-media #metadata-line *,
+ytd-rich-grid-media #byline,
+ytd-rich-grid-media #byline *,
+ytd-rich-grid-media yt-formatted-string,
+ytd-rich-grid-slim-media #details,
+ytd-rich-grid-slim-media #details *,
+ytd-rich-grid-slim-media #metadata-line,
+ytd-rich-grid-slim-media #metadata-line *,
+ytd-rich-grid-slim-media #byline,
+ytd-rich-grid-slim-media #byline *,
+ytd-rich-grid-slim-media yt-formatted-string,
+ytd-video-renderer #details,
+ytd-video-renderer #details *,
+ytd-video-renderer #metadata-line,
+ytd-video-renderer #metadata-line *,
+ytd-video-renderer #byline,
+ytd-video-renderer #byline *,
+ytd-video-renderer yt-formatted-string {
+  color: var(--classic-link-active) !important;
+}
+
+/* Watch page metadata links */
+ytd-watch-metadata a,
+#owner a,
+#upload-info a {
+  color: var(--classic-link-active) !important;
 }
 
 /* GIF fillers for removed ad slots */

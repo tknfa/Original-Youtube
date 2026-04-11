@@ -3,6 +3,7 @@
   "name": "Classic YouTube Mode",
   "version": "0.1.0",
   "description": "Restore a cleaner, classic YouTube browse experience (2018-style).",
+  "permissions": ["storage"],
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
@@ -11,6 +12,7 @@
       "run_at": "document_idle"
     }
   ],
+  "options_page": "options.html",
   "web_accessible_resources": [
     {
       "resources": ["assets/gifs/*", "assets/gifs/manifest.json"],
