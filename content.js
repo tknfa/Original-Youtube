@@ -315,6 +315,132 @@
     });
   }
 
+  function forceSquareHomeThumbnails() {
+    const browse = getHomeBrowse();
+    if (!browse) return;
+
+    const applySquareCorners = (node, { clip = false, overflow = false } = {}) => {
+      [
+        "border-radius",
+        "border-start-start-radius",
+        "border-start-end-radius",
+        "border-end-start-radius",
+        "border-end-end-radius",
+      ].forEach((property) => {
+        node.style.setProperty(property, "0", "important");
+      });
+
+      if (overflow) {
+        node.style.setProperty("overflow", "hidden", "important");
+      }
+
+      if (clip) {
+        node.style.setProperty("clip-path", "inset(0 round 0px)", "important");
+        node.style.setProperty("-webkit-mask-image", "none", "important");
+        node.style.setProperty("mask-image", "none", "important");
+      }
+    };
+
+    const hosts = browse.querySelectorAll(
+      [
+        "ytd-thumbnail",
+        "ytd-thumbnail-view-model",
+        "a#thumbnail",
+        "#thumbnail",
+        "#thumbnail-container",
+        "yt-image",
+        "yt-img-shadow",
+        "yt-core-image",
+        "ytd-thumbnail-overlay-time-status-renderer",
+      ].join(", ")
+    );
+
+    const childSelector = [
+      "#thumbnail",
+      "#thumbnail-container",
+      "img",
+      "yt-image",
+      "yt-image img",
+      "yt-img-shadow",
+      "yt-img-shadow img",
+      "yt-core-image",
+      "yt-core-image img",
+      "img.yt-core-image",
+      "img.yt-core-image--fill-parent-height",
+      "ytd-thumbnail-overlay-time-status-renderer",
+    ].join(", ");
+
+    hosts.forEach((host) => {
+      [
+        "--yt-border-radius-large",
+        "--yt-border-radius-medium",
+        "--yt-border-radius-small",
+        "--ytd-thumbnail-border-radius",
+        "--ytd-grid-thumbnail-border-radius",
+      ].forEach((variable) => {
+        host.style.setProperty(variable, "0px", "important");
+      });
+
+      applySquareCorners(host, { clip: true, overflow: true });
+
+      host.querySelectorAll(childSelector).forEach((child) => {
+        applySquareCorners(child, { clip: true });
+      });
+
+      if (host.shadowRoot) {
+        host.shadowRoot.querySelectorAll(childSelector).forEach((child) => {
+          applySquareCorners(child, { clip: true });
+        });
+      }
+    });
+
+    browse
+      .querySelectorAll(
+        [
+          "a#thumbnail",
+          "a#thumbnail #thumbnail",
+          "a#thumbnail #thumbnail-container",
+          "a#thumbnail img",
+          "a#thumbnail yt-image",
+          "a#thumbnail yt-image img",
+          "a#thumbnail yt-img-shadow",
+          "a#thumbnail yt-img-shadow img",
+          "a#thumbnail yt-core-image",
+          "a#thumbnail yt-core-image img",
+        ].join(", ")
+      )
+      .forEach((node) => {
+        applySquareCorners(node, {
+          clip: node.tagName !== "A",
+          overflow: node.tagName === "A",
+        });
+      });
+  }
+
+  function restoreRoundHomeAvatars() {
+    const browse = getHomeBrowse();
+    if (!browse) return;
+
+    browse
+      .querySelectorAll(
+        [
+          "ytd-channel-thumbnail-with-link-renderer img",
+          "ytd-channel-thumbnail-with-link-renderer yt-img-shadow",
+          "ytd-channel-thumbnail-with-link-renderer yt-image img",
+          "ytd-video-owner-renderer img",
+          "ytd-guide-entry-renderer img",
+        ].join(", ")
+      )
+      .forEach((node) => {
+        node.style.setProperty("border-radius", "9999px", "important");
+        node.style.setProperty("border-start-start-radius", "9999px", "important");
+        node.style.setProperty("border-start-end-radius", "9999px", "important");
+        node.style.setProperty("border-end-start-radius", "9999px", "important");
+        node.style.setProperty("border-end-end-radius", "9999px", "important");
+        node.style.setProperty("clip-path", "none", "important");
+      });
+  }
+
   function removeShelvesByTitle() {
     const candidates = document.querySelectorAll(
       "ytd-rich-section-renderer, ytd-reel-shelf-renderer, ytd-rich-shelf-renderer, ytd-shelf-renderer, ytd-item-section-renderer"
@@ -633,6 +759,8 @@
     stripLeadingHomeSections();
     ensureClassicLogo();
     forceBlueText();
+    forceSquareHomeThumbnails();
+    restoreRoundHomeAvatars();
     removeShelvesByTitle();
     removeAskForVideosModule();
     removeShortsNavEntries();
